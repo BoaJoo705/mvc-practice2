@@ -1,8 +1,10 @@
 package org.example.mvc;
 
 import org.example.mvc.controller.Controller;
+import org.example.mvc.controller.RequestMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -17,25 +19,31 @@ import java.io.IOException;
 public class DispatcherServlet extends HttpServlet {
     private  static final Logger log = LoggerFactory.getLogger(DispatcherServlet.class);
 
-    private RequestMappingHandlerMapping requestMappingHandlerMapping;
+    private RequestMappingHandlerMapping rmhm;
 
     @Override
     public void init() throws ServletException {
-        requestMappingHandlerMapping = new RequestMappingHandlerMapping();
-        requestMappingHandlerMapping.init();
+        rmhm = new RequestMappingHandlerMapping();
+        rmhm.init();
     }
 
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         log.info("[DispatcherServlet] Service started");
+
         try {
-            Controller handler = requestMappingHandlerMapping.findHandler(request.getRequestURI());
+            //Request.getMethod 를 하면 get인지 post 인지 알수있고
+            Controller handler = rmhm.findHandler(new HandlerKey(RequestMethod.valueOf(request.getMethod()),request.getRequestURI()));
+            // viewname이 "redirect:/users"로 인식
             String viewName = handler.handleRequest(request,response);
-            RequestDispatcher requestDispatcher = request.getRequestDispatcher(viewName);
-            requestDispatcher.forward(request,response);
+
+
+//            RequestDispatcher requestDispatcher = request.getRequestDispatcher(viewName);
+//            requestDispatcher.forward(request,response);
 
         } catch (Exception e) {
-            log.error("exception occured: [{}] ",e.getMessage(),e);
+            log.error("exception occurred: [{}] ",e.getMessage(),e);
+            throw new ServletException(e);
         }
     }
 }
