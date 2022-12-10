@@ -11,7 +11,7 @@ public class WebApplicationServer {
     private static final Logger log = LoggerFactory.getLogger(WebApplicationServer.class);
 
     public static void main(String[] args) throws Exception {
-        String webappDirLocation = "webapp/";
+        String webappDirLocation = "webapps/";
         Tomcat tomcat = new Tomcat();
         tomcat.setPort(8080); //8080포트 설정
 
