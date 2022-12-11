@@ -17,7 +17,7 @@ public class RequestMappingHandlerMapping {
         mappings.put(new HandlerKey(RequestMethod.GET,"/user/form"),new ForwardController("/user/form"));
     }
 
-    public Controller findHandler(HandlerKey handlerKey){
+    public Controller findHandler(HandlerKey handlerKey){ // 키에 맞는 컨트롤러 값 찾기
         return mappings.get(handlerKey);
     }
 }

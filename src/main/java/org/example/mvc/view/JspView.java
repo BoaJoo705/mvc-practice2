@@ -13,10 +13,11 @@ public class JspView implements View{
     }
     @Override
     public void render(Map<String, ?> model, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        model.forEach(request::setAttribute); //model에 값이 있으면
+        model.forEach(request::setAttribute); // model에 값이 있으면
 
         //forward 방식
         RequestDispatcher requestDispatcher = request.getRequestDispatcher(name);
         requestDispatcher.forward(request,response);
+        System.out.println("name::"+name);
     }
 }

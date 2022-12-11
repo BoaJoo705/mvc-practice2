@@ -3,6 +3,7 @@ package org.example.mvc;
 import org.example.mvc.controller.Controller;
 import org.example.mvc.controller.RequestMethod;
 import org.example.mvc.view.JspViewResolver;
+import org.example.mvc.view.ModelAndView;
 import org.example.mvc.view.View;
 import org.example.mvc.view.ViewResolver;
 import org.slf4j.Logger;
@@ -25,15 +26,18 @@ import java.util.List;
 public class DispatcherServlet extends HttpServlet {
     private  static final Logger log = LoggerFactory.getLogger(DispatcherServlet.class);
 
-    private RequestMappingHandlerMapping rmhm;
+    private RequestMappingHandlerMapping rmhm; // 핸들러매핑
 
-    private List<ViewResolver> viewResolvers;
+    private List<HandlerAdaptor> handlerAdaptors; // 핸들어댑터
+
+    private List<ViewResolver> viewResolvers; //뷰리졸버
 
     @Override
-    public void init() throws ServletException {
+    public void init() throws ServletException { //초기화
         rmhm = new RequestMappingHandlerMapping();
         rmhm.init();
 
+        handlerAdaptors = List.of(new SimpleControllerHandlerAdator());
         viewResolvers = Collections.singletonList(new JspViewResolver());
     }
 
@@ -43,17 +47,25 @@ public class DispatcherServlet extends HttpServlet {
 
         try {
             //Request.getMethod 를 하면 get인지 post 인지 알수있고
-            Controller handler = rmhm.findHandler(new HandlerKey(RequestMethod.valueOf(request.getMethod()),request.getRequestURI()));
+            Controller handler = rmhm.findHandler(new HandlerKey(RequestMethod.valueOf(request.getMethod()),request.getRequestURI()));  // 핸들러매핑을 검색해서 핸들을 찾고 핸들은 컨트롤러르 의미함
             // viewname이 "redirect:/users"로 인식
-            String viewName = handler.handleRequest(request,response);
-            System.out.println("viewName11111111111:"+viewName); //     /user/list
+//            String viewName = handler.handleRequest(request,response);
+
+            HandlerAdaptor handlerAdaptor = handlerAdaptors.stream()     // 핸들러를 지원하는 어댑터를 찾아서 //스트림(Streams)은 람다를 활용할 수 있는 기술 중 하나
+                    .filter(ha -> ha.supports(handler))
+                    .findFirst()
+                    .orElseThrow(() -> new ServletException("No adaptor for handler [" + handler + "]"));
+
+            ModelAndView modelAndView = handlerAdaptor.handle(request,response,handler); //핸들러 어댑터를 실행해줌 (핸들러를 전닳주면) 모델앤뷰를 돌려주고 //home,
+
 
             for (ViewResolver viewResolver : viewResolvers) {
-                View view = viewResolver.resolverView(viewName);
-                view.render(new HashMap<>(),request,response);
+                View view = viewResolver.resolverView(modelAndView.getViewName()); //뷰 리졸버에서 뷰를 선택해서
+//                view.render(new HashMap<>(),request,response);
+                view.render(modelAndView.getModel(),request,response); //뷰를 랜더링해주면
+                System.out.println("view:"+view); //     /user/list.jsp
             }
 
-            System.out.println("viewName2222222222222:"+viewName); //     /user/list.jsp
 
 //            RequestDispatcher requestDispatcher = request.getRequestDispatcher(viewName);
 //            requestDispatcher.forward(request,response);
