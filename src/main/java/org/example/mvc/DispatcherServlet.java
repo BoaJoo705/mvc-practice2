@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-import javax.servlet.RequestDispatcher;
+import javax.servlet.Servlet;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -18,7 +18,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 
@@ -26,7 +25,7 @@ import java.util.List;
 public class DispatcherServlet extends HttpServlet {
     private  static final Logger log = LoggerFactory.getLogger(DispatcherServlet.class);
 
-    private RequestMappingHandlerMapping rmhm; // 핸들러매핑
+    private List<HandlerMapping> handlerMappings; // 핸들러매핑
 
     private List<HandlerAdaptor> handlerAdaptors; // 핸들어댑터
 
@@ -34,22 +33,35 @@ public class DispatcherServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException { //초기화
-        rmhm = new RequestMappingHandlerMapping();
+        RequestMappingHandlerMapping rmhm = new RequestMappingHandlerMapping();
         rmhm.init();
 
-        handlerAdaptors = List.of(new SimpleControllerHandlerAdator());
+        AnnotationHandlerMapping ahm = new AnnotationHandlerMapping("org.example");
+        ahm.initialize();
+
+        handlerMappings = List.of(rmhm,ahm);
+        handlerAdaptors = List.of(new SimpleControllerHandlerAdator(), new AnnotationHandlerAdaptor()); //애노테이션 핸들러 어댑터를 따로 추가해줘야한다.
         viewResolvers = Collections.singletonList(new JspViewResolver());
     }
 
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         log.info("[DispatcherServlet] Service started");
+        String requestURI = request.getRequestURI();
+        RequestMethod requestMethod = RequestMethod.valueOf(request.getMethod());
 
         try {
             //Request.getMethod 를 하면 get인지 post 인지 알수있고
-            Controller handler = rmhm.findHandler(new HandlerKey(RequestMethod.valueOf(request.getMethod()),request.getRequestURI()));  // 핸들러매핑을 검색해서 핸들을 찾고 핸들은 컨트롤러르 의미함
+//            Object handler = hm.findHandler(new HandlerKey(RequestMethod.valueOf(request.getMethod()),request.getRequestURI()));  // 핸들러매핑을 검색해서 핸들을 찾고 핸들은 컨트롤러르 의미함
             // viewname이 "redirect:/users"로 인식
 //            String viewName = handler.handleRequest(request,response);
+            Object handler = handlerMappings.stream()
+                    .filter(hm ->hm.findHandler(new HandlerKey(requestMethod,requestURI)) !=null)
+                    .map(hm->hm.findHandler(new HandlerKey(requestMethod,requestURI)))
+                    .findFirst()
+                    .orElseThrow(() -> new ServletException("No handler for[" + requestMethod+", " + requestURI +"]"));
+
+//            findHandler(new HandlerKey(RequestMethod.valueOf(request.getMethod()),request.getRequestURI()));
 
             HandlerAdaptor handlerAdaptor = handlerAdaptors.stream()     // 핸들러를 지원하는 어댑터를 찾아서 //스트림(Streams)은 람다를 활용할 수 있는 기술 중 하나
                     .filter(ha -> ha.supports(handler))
