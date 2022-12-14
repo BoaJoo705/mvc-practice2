@@ -16,7 +16,7 @@ public class WebApplicationServer {
         tomcat.setPort(8080); //8080포트 설정
 
         tomcat.addWebapp("/",new File(webappDirLocation).getAbsolutePath()); //webapp/경로를 바라보도록
-        log.info("configuring app with basedir: {}", new File("/" + webappDirLocation).getAbsolutePath());
+        log.info("configuring app with basedir: {}", new File("./" + webappDirLocation).getAbsolutePath());
 
         tomcat.start();
         tomcat.getServer().await();

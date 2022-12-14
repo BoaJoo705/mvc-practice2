@@ -36,10 +36,12 @@ public class DispatcherServlet extends HttpServlet {
         RequestMappingHandlerMapping rmhm = new RequestMappingHandlerMapping();
         rmhm.init();
 
+        // 다른 코드는 건드리지 않고 애노테이션 추가
         AnnotationHandlerMapping ahm = new AnnotationHandlerMapping("org.example");
         ahm.initialize();
 
         handlerMappings = List.of(rmhm,ahm);
+        // 다른 코드는 건드리지 않고 애노테이션 추가
         handlerAdaptors = List.of(new SimpleControllerHandlerAdator(), new AnnotationHandlerAdaptor()); //애노테이션 핸들러 어댑터를 따로 추가해줘야한다.
         viewResolvers = Collections.singletonList(new JspViewResolver());
     }
@@ -55,7 +57,7 @@ public class DispatcherServlet extends HttpServlet {
 //            Object handler = hm.findHandler(new HandlerKey(RequestMethod.valueOf(request.getMethod()),request.getRequestURI()));  // 핸들러매핑을 검색해서 핸들을 찾고 핸들은 컨트롤러르 의미함
             // viewname이 "redirect:/users"로 인식
 //            String viewName = handler.handleRequest(request,response);
-            Object handler = handlerMappings.stream()
+            Object handler = handlerMappings.stream()// 핸들러 매핑에서 핸들러를 가지고옴
                     .filter(hm ->hm.findHandler(new HandlerKey(requestMethod,requestURI)) !=null)
                     .map(hm->hm.findHandler(new HandlerKey(requestMethod,requestURI)))
                     .findFirst()
@@ -64,11 +66,12 @@ public class DispatcherServlet extends HttpServlet {
 //            findHandler(new HandlerKey(RequestMethod.valueOf(request.getMethod()),request.getRequestURI()));
 
             HandlerAdaptor handlerAdaptor = handlerAdaptors.stream()     // 핸들러를 지원하는 어댑터를 찾아서 //스트림(Streams)은 람다를 활용할 수 있는 기술 중 하나
-                    .filter(ha -> ha.supports(handler))
+                    .filter(ha -> ha.supports(handler))                     // 핸들러 어댑터를 통해 어댑터를 가지고 와서
                     .findFirst()
                     .orElseThrow(() -> new ServletException("No adaptor for handler [" + handler + "]"));
 
-            ModelAndView modelAndView = handlerAdaptor.handle(request,response,handler); //핸들러 어댑터를 실행해줌 (핸들러를 전닳주면) 모델앤뷰를 돌려주고 //home,
+            // 내부에서 핸들러를 전달해서
+            ModelAndView modelAndView = handlerAdaptor.handle(request,response,handler); //핸들러 어댑터를 실행해줌 (핸들러를 전달해주면) 모델앤뷰를 돌려주고 //home,
 
 
             for (ViewResolver viewResolver : viewResolvers) {
